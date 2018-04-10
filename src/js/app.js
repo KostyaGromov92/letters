@@ -1,14 +1,38 @@
 import 'pixi.js';
 import WebFont from 'webfontloader';
+import Ball from './ball';
 
 WebFont.load({
   google: {
-    families: ['Droid Sans', 'Droid Serif']
+    families: ['Francois One']
   },
   active: function() {
     init();
   }
 });
+
+function drawletter(text, coords, color, balls, containers, power, layer, layers) {
+
+  let temp = new PIXI.Container();
+
+  let letter = new PIXI.Text(text, {
+    fontFamily : 'Francois One', 
+    fontSize: 54, 
+    fill : color, 
+    align : 'center'
+  });
+  
+  letter.position.x = coords.x;
+  letter.position.y = coords.y;
+  temp.addChild(letter);
+  layers[layer].addChild(temp);
+
+  balls.push(
+    new Ball(coords.x + coords.width/2, coords.y + coords.height/2)
+  );
+
+  containers.push(temp);
+}
 
 let app = new PIXI.Application({transparent: true});
 document.body.appendChild(app.view);
@@ -19,38 +43,37 @@ app.stage.addChild(container);
 
 function init() {
   let count = 0;
+  let elsArray = document.querySelectorAll('.letter');
+  let balls = [];
+  let letters = [];
+  let layers = new Array(4).fill().map(x => new PIXI.Container());
 
-  let text1 = new PIXI.Text('This is a PixiJS text',{
-    fontFamily : 'Droid Sans', 
-    fontSize: 54, 
-    fill : 0x000000, 
-    align : 'center'
+  layers.forEach(l => {
+    container.addChild(l);
   });
+  layers[3].blendMode = 2;
 
-  text1.position.set(0);
-  container.addChild(text1);
+  elsArray.forEach(l => {
 
-  let text2 = new PIXI.Text('This is a PixiJS text',{
-    fontFamily : 'Droid Sans', 
-    fontSize: 54, 
-    fill : 0xf9ed00, 
-    align : 'center'
+    let coord = l.getBoundingClientRect();
+
+    drawletter(l.innerText, coord, 0x03aaea, balls, letters, 0.1, 0, layers);
+    drawletter(l.innerText, coord, 0xf9ed00, balls, letters, 0.1, 1, layers);
+    drawletter(l.innerText, coord, 0xe80289, balls, letters, 0.1, 2, layers);
+    drawletter(l.innerText, coord, 0x03aaea, balls, letters, 0.1, 3, layers);
+
   });
-
-  text2.position.set(10);
-  container.addChild(text2);
-
-  let text3 = new PIXI.Text('This is a PixiJS text',{
-    fontFamily : 'Droid Sans', 
-    fontSize: 54, 
-    fill : 0x03aaea, 
-    align : 'center'
-  });
-
-  text3.position.set(20);
-  container.addChild(text3);
 
   app.ticker.add(function() {
     count++;
+
+    let mousePosition = app.renderer.plugins.interaction.mouse.global;
+
+    balls.forEach((ball, i) => {
+      ball.think(mousePosition);
+
+      letters[i].position.x = ball.diffX;
+      letters[i].position.y = ball.diffY;
+    });
   });
 }
